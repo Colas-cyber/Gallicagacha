@@ -21,15 +21,46 @@ async function openPack() {
         const query = "dc.type all '" + type + "' and date adj '" + year + "'";
         const urlBNF = "https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&query=" + encodeURIComponent(query) + "&maximumRecords=1&startRecord=" + offset;
         
-        // ON CHANGE DE PROXY ICI (corsproxy.io)
-        const finalUrl = "https://corsproxy.io/?" + encodeURIComponent(urlBNF);
+      try {
+        const query = "dc.type all '" + type + "' and date adj '" + year + "'";
+        const urlBNF = "https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&query=" + encodeURIComponent(query) + "&maximumRecords=1&startRecord=" + offset;
+        
+        // NOUVEAU PROXY : Plus libre et direct
+        const finalUrl = "https://thingproxy.freeboard.io/fetch/" + urlBNF;
         
         console.log("Tentative sur : " + finalUrl);
         
         const response = await fetch(finalUrl);
-        if (!response.ok) throw new Error("Serveur occupé");
+        if (!response.ok) throw new Error("Erreur proxy");
         
         const xmlText = await response.text();
+
+        const idMatch = xmlText.match(/<dc:identifier>(.*?)<\/dc:identifier>/);
+
+        if (!idMatch) {
+            console.log("Rien trouvé, nouvel essai...");
+            pack.classList.remove('shake');
+            return openPack();
+        }
+
+        const ark = idMatch[1].split('ark:/')[1].trim();
+        const titleMatch = xmlText.match(/<dc:title>(.*?)<\/dc:title>/);
+        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").substring(0, 80) : "Archive Gallica";
+
+        const img = "https://gallica.bnf.fr/ark:/" + ark + ".thumbnail";
+        const link = "https://gallica.bnf.fr/ark:/" + ark;
+
+        showModal(title, type + " (" + year + ")", img, link);
+        saveHero({ name: title, img: img, url: link });
+
+    } catch (e) {
+        console.error("ERREUR :", e);
+        // Si ThingProxy fatigue, on tente une dernière fois sans proxy au cas où
+        alert("Le grimoire résiste... Reclique une fois !");
+    } finally {
+        pack.classList.remove('shake');
+        status.innerText = "CLIQUER POUR CHERCHER";
+    }
 
         // On cherche l'identifiant (ARK)
         const idMatch = xmlText.match(/<dc:identifier>(.*?)<\/dc:identifier>/);
