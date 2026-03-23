@@ -1,7 +1,9 @@
-console.log("GallicaGacha V3.3 - Images HD");
+console.log("GallicaGacha V3.4 - URL Vercel absolue");
 
 const STORAGE_KEY = "gallica_collection_v1";
-const PROXY_URL = "/api/gallica";
+
+// ✅ URL absolue du proxy Vercel (fonctionne depuis n'importe où)
+const PROXY_URL = "https://gallicagacha.vercel.app/api/gallica";
 
 // ---- THÈMES ----
 const THEMES = [
@@ -41,13 +43,11 @@ function pickRarity() {
   return RARITIES[0];
 }
 
-// ---- CONSTRUCTION URL IMAGE HD (API IIIF Gallica) ----
-// Format : /iiif/ark:/12148/{ark}/f{page}/full/{largeur},/0/native.jpg
+// ---- URLS IMAGE ----
 function buildImgUrl(arkId, page) {
   return `https://gallica.bnf.fr/iiif/ark:/12148/${arkId}/f${page}/full/600,/0/native.jpg`;
 }
 function buildImgFallback(arkId, page) {
-  // Fallback si IIIF échoue : thumbnail classique
   return `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}.thumbnail`;
 }
 
@@ -83,8 +83,7 @@ async function fetchRandomCard() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const card = await res.json();
     if (card.error) throw new Error(card.error);
-    // Remplacer les URLs par la version HD
-    card.imgUrl     = buildImgUrl(card.arkId, card.page);
+    card.imgUrl      = buildImgUrl(card.arkId, card.page);
     card.imgFallback = buildImgFallback(card.arkId, card.page);
     return card;
   } catch (e) {
@@ -170,6 +169,11 @@ function showModal(card) {
         transition: opacity .2s;
       }
       .gc-img img:hover { opacity: .85; }
+      .gc-hint {
+        color: #d4af37; font-size: 10px;
+        margin-top: 8px; letter-spacing: 1px;
+        opacity: .7;
+      }
       .gc-body {
         padding: 14px 16px 4px;
         text-align: center;
@@ -181,19 +185,28 @@ function showModal(card) {
       }
       .gc-meta { font-size: 11px; color: #666; margin: 3px 0; }
 
-      /* Bandeau "Ajouté à la collection" */
+      /* Bandeau bas — simple texte, pas un bouton */
       .gc-footer {
         margin: 12px 0 0;
         background: #1a1a2e;
-        color: #d4af37;
-        padding: 14px 16px;
+        padding: 16px;
         text-align: center;
-        font-size: 13px;
-        letter-spacing: 2px;
         cursor: pointer;
-        transition: background .2s;
       }
-      .gc-footer:hover { background: #2a2a4e; }
+      .gc-footer p {
+        color: #d4af37;
+        font-size: 13px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        margin: 0;
+      }
+      .gc-footer span {
+        display: block;
+        color: #888;
+        font-size: 10px;
+        letter-spacing: 1px;
+        margin-top: 4px;
+      }
     </style>
     <div class="gc">
       <div class="gc-head">
@@ -207,7 +220,8 @@ function showModal(card) {
           alt="${card.title}"
           onerror="this.src='${card.imgFallback}';this.onerror=null;"
           onclick="window.open('${card.itemUrl}','_blank')"
-          title="Cliquer pour voir l'original sur Gallica">
+          title="Voir sur Gallica">
+        <p class="gc-hint">↑ cliquer pour voir sur Gallica</p>
       </div>
 
       <div class="gc-body">
@@ -216,15 +230,16 @@ function showModal(card) {
         <p class="gc-meta" style="font-size:9px;color:#bbb;">ark:/12148/${card.arkId}</p>
       </div>
 
-      <div class="gc-footer" id="gc-btn-close">
-        AJOUTÉ À LA COLLECTION
+      <div class="gc-footer" id="gc-close" title="Fermer">
+        <p>AJOUTÉ À LA COLLECTION</p>
+        <span>cliquer pour fermer</span>
       </div>
     </div>
   `;
 
   document.body.appendChild(div);
   div.addEventListener('click', (e) => { if (e.target === div) div.remove(); });
-  document.getElementById('gc-btn-close').addEventListener('click', () => div.remove());
+  document.getElementById('gc-close').addEventListener('click', () => div.remove());
 }
 
 // ---- SAUVEGARDE ----
