@@ -1,9 +1,9 @@
-console.log("GallicaGacha V3.2 - Carte agrandie");
+console.log("GallicaGacha V3.3 - Images HD");
 
 const STORAGE_KEY = "gallica_collection_v1";
 const PROXY_URL = "/api/gallica";
 
-// ---- THÈMES DE RECHERCHE ----
+// ---- THÈMES ----
 const THEMES = [
   { query: 'dc.type adj "image" and dc.date.issued any "1900 1901 1902"',      label: "Photo 1900"      },
   { query: 'dc.type adj "fascicule" and dc.date.issued any "1870 1871 1872"',  label: "Presse 1870"     },
@@ -14,7 +14,7 @@ const THEMES = [
   { query: 'dc.type adj "fascicule" and dc.date.issued any "1930 1931 1932"',  label: "Années 30"       },
 ];
 
-// ---- LISTE DE SECOURS ----
+// ---- FALLBACK ----
 const FALLBACK_ARKS = [
   { ark: "bpt6k285345w",  title: "Le Figaro, déc. 1900",       type: "journal", pages: 4  },
   { ark: "bpt6k285269s",  title: "Le Figaro, sept. 1900",      type: "journal", pages: 4  },
@@ -41,6 +41,16 @@ function pickRarity() {
   return RARITIES[0];
 }
 
+// ---- CONSTRUCTION URL IMAGE HD (API IIIF Gallica) ----
+// Format : /iiif/ark:/12148/{ark}/f{page}/full/{largeur},/0/native.jpg
+function buildImgUrl(arkId, page) {
+  return `https://gallica.bnf.fr/iiif/ark:/12148/${arkId}/f${page}/full/600,/0/native.jpg`;
+}
+function buildImgFallback(arkId, page) {
+  // Fallback si IIIF échoue : thumbnail classique
+  return `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}.thumbnail`;
+}
+
 // ---- FONCTION PRINCIPALE ----
 async function openPack() {
   const pack = document.getElementById('mainPack');
@@ -52,10 +62,10 @@ async function openPack() {
 
   try {
     const card = await fetchRandomCard();
-    saveHero(card); // ← collecte automatique dès l'ouverture
+    saveHero(card);
     showModal(card);
   } catch (e) {
-    console.error("Erreur fatale :", e);
+    console.error("Erreur :", e);
     if (status) status.innerText = "BNF SATURÉE, RÉESSAIE...";
   } finally {
     pack.classList.remove('opening');
@@ -63,17 +73,19 @@ async function openPack() {
   }
 }
 
-// ---- PROXY VERCEL ----
+// ---- PROXY ----
 async function fetchRandomCard() {
   const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
   const startRecord = Math.floor(Math.random() * 50) + 1;
   const url = `${PROXY_URL}?query=${encodeURIComponent(theme.query)}&maximumRecords=1&startRecord=${startRecord}`;
   try {
     const res = await fetchWithTimeout(url, 8000);
-    if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const card = await res.json();
     if (card.error) throw new Error(card.error);
-    console.log("✅ Carte reçue :", card.title);
+    // Remplacer les URLs par la version HD
+    card.imgUrl     = buildImgUrl(card.arkId, card.page);
+    card.imgFallback = buildImgFallback(card.arkId, card.page);
     return card;
   } catch (e) {
     console.warn("⚠️ Fallback :", e.message);
@@ -86,9 +98,9 @@ function buildFallbackCard() {
   const page = Math.floor(Math.random() * item.pages) + 1;
   return {
     arkId: item.ark, title: item.title, year: null, docType: item.type, page,
-    imgUrl:   `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.thumbnail`,
-    itemUrl:  `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.item`,
-    coverUrl: `https://gallica.bnf.fr/ark:/12148/${item.ark}/f1.thumbnail`,
+    imgUrl:      buildImgUrl(item.ark, page),
+    imgFallback: buildImgFallback(item.ark, page),
+    itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.item`,
   };
 }
 
@@ -123,7 +135,7 @@ function showModal(card) {
     <style>
       @keyframes gfadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
       .gc {
-        background:#faf6ee;
+        background: #faf6ee;
         width: min(420px, 92vw);
         border-radius: 8px;
         overflow: hidden;
@@ -131,96 +143,87 @@ function showModal(card) {
         box-shadow: 0 0 50px ${rarity.color}88;
       }
       .gc-head {
-        background:#1a1a2e;color:#d4af37;
-        padding:10px 16px;font-size:11px;
-        letter-spacing:2px;
-        border-bottom:2px solid ${rarity.color};
-        text-align:center;
+        background: #1a1a2e; color: #d4af37;
+        padding: 10px 16px; font-size: 11px;
+        letter-spacing: 2px;
+        border-bottom: 2px solid ${rarity.color};
+        text-align: center;
       }
       .gc-badge {
-        display:inline-block;padding:3px 14px;
-        background:${rarity.color};color:#fff;
-        font-size:10px;letter-spacing:2px;
-        border-radius:3px;margin-bottom:4px;
+        display: inline-block; padding: 3px 14px;
+        background: ${rarity.color}; color: #fff;
+        font-size: 10px; letter-spacing: 2px;
+        border-radius: 3px; margin-bottom: 4px;
       }
       .gc-img {
-        background:#1a1a2e;
+        background: #1a1a2e;
         padding: 16px;
-        text-align:center;
+        text-align: center;
       }
       .gc-img img {
         width: min(340px, 80vw);
-        height: min(420px, 55vh);
-        object-fit:cover;
-        border:2px solid #d4af37;
-        display:block;margin:0 auto;
-        cursor: zoom-in;
+        height: min(420px, 52vh);
+        object-fit: cover;
+        border: 2px solid #d4af37;
+        display: block; margin: 0 auto;
+        cursor: pointer;
+        transition: opacity .2s;
       }
+      .gc-img img:hover { opacity: .85; }
       .gc-body {
-        padding:14px 16px 6px;
-        text-align:center;
+        padding: 14px 16px 4px;
+        text-align: center;
       }
       .gc-title {
-        font-size:15px;font-weight:bold;
-        color:#1a1a2e;margin:0 0 6px;
-        line-height:1.4;
+        font-size: 15px; font-weight: bold;
+        color: #1a1a2e; margin: 0 0 6px;
+        line-height: 1.4;
       }
-      .gc-meta { font-size:11px;color:#666;margin:3px 0; }
-      .gc-collected {
-        font-size:11px;color:#2a9d4e;
-        margin: 6px 0 0;
-        letter-spacing:1px;
-      }
+      .gc-meta { font-size: 11px; color: #666; margin: 3px 0; }
+
+      /* Bandeau "Ajouté à la collection" */
       .gc-footer {
-        display:flex;padding:12px 16px 16px;
+        margin: 12px 0 0;
+        background: #1a1a2e;
+        color: #d4af37;
+        padding: 14px 16px;
+        text-align: center;
+        font-size: 13px;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: background .2s;
       }
-      .gc-view {
-        flex:1;padding:12px;cursor:pointer;border-radius:3px;
-        font-family:Georgia;font-size:13px;letter-spacing:1px;
-        background:#1a1a2e;color:#d4af37;
-        border:1px solid #d4af37;
-        text-decoration:none;
-        display:flex;align-items:center;justify-content:center;
-        gap: 6px;
-      }
-      .gc-view:hover{background:#d4af37;color:#1a1a2e;}
-      .gc-close {
-        padding:12px 16px;cursor:pointer;border-radius:3px;
-        font-family:Georgia;font-size:13px;
-        background:transparent;color:#999;
-        border:1px solid #ddd;margin-left:8px;
-      }
-      .gc-close:hover{background:#eee;color:#333;}
+      .gc-footer:hover { background: #2a2a4e; }
     </style>
     <div class="gc">
       <div class="gc-head">
         <div class="gc-badge">${rarity.label}</div><br>
         BIBLIOTHÈQUE NATIONALE DE FRANCE
       </div>
+
       <div class="gc-img">
-        <img src="${card.imgUrl}" alt="${card.title}"
-             onerror="this.src='${card.coverUrl}';this.onerror=null;"
-             onclick="window.open('${card.itemUrl}','_blank')">
+        <img
+          src="${card.imgUrl}"
+          alt="${card.title}"
+          onerror="this.src='${card.imgFallback}';this.onerror=null;"
+          onclick="window.open('${card.itemUrl}','_blank')"
+          title="Cliquer pour voir l'original sur Gallica">
       </div>
+
       <div class="gc-body">
         <p class="gc-title">${card.title}</p>
         <p class="gc-meta">${typeLabel} · ${yearLabel} · Page ${card.page}</p>
         <p class="gc-meta" style="font-size:9px;color:#bbb;">ark:/12148/${card.arkId}</p>
-        <p class="gc-collected">✦ Ajouté à votre collection</p>
       </div>
-      <div class="gc-footer">
-        <a href="${card.itemUrl}" target="_blank" class="gc-view">
-          Voir l'original sur Gallica →
-        </a>
-        <button class="gc-close" id="gc-btn-close">✕</button>
+
+      <div class="gc-footer" id="gc-btn-close">
+        AJOUTÉ À LA COLLECTION
       </div>
     </div>
   `;
 
   document.body.appendChild(div);
-  // Clic fond = fermer
   div.addEventListener('click', (e) => { if (e.target === div) div.remove(); });
-  // Bouton fermer
   document.getElementById('gc-btn-close').addEventListener('click', () => div.remove());
 }
 
@@ -236,7 +239,7 @@ function saveHero(card) {
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(coll.slice(0, 500)));
     }
-  } catch (e) { console.warn("LocalStorage indisponible :", e); }
+  } catch (e) { console.warn("LocalStorage :", e); }
 }
 
 // ---- COLLECTION ----
@@ -252,10 +255,13 @@ function showCollection() {
   container.innerHTML = coll.map(card => `
     <div onclick="window.open('${card.url || card.itemUrl}','_blank')"
          title="${card.name || card.title}"
-         style="width:120px;background:#faf6ee;border:1px solid #ccc;border-radius:4px;
-                overflow:hidden;text-align:center;cursor:pointer;font-family:Georgia;">
+         style="width:130px;background:#faf6ee;border:1px solid #ccc;border-radius:4px;
+                overflow:hidden;text-align:center;cursor:pointer;font-family:Georgia;
+                transition:transform .15s"
+         onmouseover="this.style.transform='scale(1.04)'"
+         onmouseout="this.style.transform='scale(1)'">
       <img src="${card.img || card.imgUrl}" onerror="this.onerror=null;"
-           style="width:100%;height:155px;object-fit:cover;display:block;background:#eee;">
+           style="width:100%;height:165px;object-fit:cover;display:block;background:#eee;">
       <div style="padding:5px 6px;font-size:10px;color:#333;white-space:nowrap;
                   overflow:hidden;text-overflow:ellipsis;">${card.name || card.title}</div>
       <div style="padding:0 6px 6px;font-size:9px;color:#888;">${card.year || "XIXe"}</div>
