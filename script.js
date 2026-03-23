@@ -1,4 +1,4 @@
-console.log("Script Gallica V10 - FINAL");
+console.log("Script Gallica V12 - Mode Page-Précise");
 
 const STORAGE_KEY = "gallica_collection_v1";
 
@@ -9,68 +9,75 @@ async function openPack() {
     if (!pack || pack.classList.contains('shake')) return;
 
     pack.classList.add('shake');
-    status.innerText = "ACCÈS AUX ARCHIVES...";
+    status.innerText = "FEUILLETAGE DES ARCHIVES...";
 
-    // On pioche une date aléatoire (jour/mois) pour faire "Almanach"
-    const years = [1870, 1889, 1900, 1914, 1848, 1830];
-    const year = years[Math.floor(Math.random() * years.length)];
-    const randomStart = Math.floor(Math.random() * 50) + 1;
+    // On cherche dans des documents qui ont beaucoup de pages (type btvb / images)
+    const year = Math.floor(Math.random() * (1914 - 1800) + 1800);
+    const startRecord = Math.floor(Math.random() * 100) + 1;
 
     try {
-        // REQUÊTE : On cherche des documents avec image de l'année choisie
-        const query = `dc.type all "image" and date adj "${year}"`;
-        const bnfUrl = `https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&query=${encodeURIComponent(query)}&maximumRecords=1&startRecord=${randomStart}`;
+        // On cherche des documents de type "image" ou "fascicule" pour avoir de belles pages
+        const query = `date adj "${year}" and (dc.type all "image" or dc.type all "monographie")`;
+        const bnfUrl = `https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&query=${encodeURIComponent(query)}&maximumRecords=1&startRecord=${startRecord}`;
         
-        // PROXY DE SECOURS (plus stable pour les petits projets)
+        // Proxy CodeTabs (plus stable)
         const finalUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(bnfUrl)}`;
         
         const response = await fetch(finalUrl);
         const xmlText = await response.text();
 
-        // Extraction de l'ARK
-        const arkMatch = xmlText.match(/ark:\/[^<\s?]+/);
+        // 1. On extrait l'identifiant (ARK)
+        const arkMatch = xmlText.match(/ark:\/[0-9a-z]+\/([a-z0-9]+)/);
         if (!arkMatch) {
-            console.log("Relance pour trouver un meilleur document...");
+            console.log("Pas de page ici, on tourne la feuille...");
             pack.classList.remove('shake');
             return openPack();
         }
 
-        const ark = arkMatch[0].replace('</dc:identifier>', '').trim();
+        const arkId = arkMatch[1]; // Exemple: btv1b84229574
+        
+        // 2. On choisit une page au hasard entre 1 et 50
+        const pageNum = Math.floor(Math.random() * 50) + 1;
+        
+        // 3. On extrait le titre
         const titleMatch = xmlText.match(/<dc:title>(.*?)<\/dc:title>/);
-        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").substring(0, 80) : "Document Historique";
+        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").substring(0, 80) : "Document Anonyme";
 
-        const img = `https://gallica.bnf.fr/${ark}.thumbnail`;
-        const link = `https://gallica.bnf.fr/${ark}`;
+        // Liens directs vers l'image de la page et la visionneuse
+        const imgUrl = `https://gallica.bnf.fr/ark:/12148/${arkId}/f${pageNum}.item.thumbnail`;
+        const fullLink = `https://gallica.bnf.fr/ark:/12148/${arkId}/f${pageNum}.item`;
 
-        showModal(title, year, img, link);
-        saveHero({ name: title, img: img, url: link, year: year });
+        console.log("TROUVÉ : " + title + " (Page " + pageNum + ")");
+        
+        showModal(title, year, pageNum, imgUrl, fullLink);
+        saveHero({ name: title, img: imgUrl, url: fullLink, year: year });
 
     } catch (e) {
         console.error("ERREUR :", e);
-        alert("Les archives sont momentanément fermées. Réessaie dans 5 secondes !");
+        status.innerText = "ERREUR RÉSEAU... RECLIQUE !";
     } finally {
         pack.classList.remove('shake');
-        status.innerText = "CLIQUER POUR CHERCHER";
+        if(status.innerText !== "ERREUR RÉSEAU... RECLIQUE !") status.innerText = "CLIQUER POUR CHERCHER";
     }
 }
 
-function showModal(title, year, img, link) {
+function showModal(title, year, page, img, link) {
     const div = document.createElement('div');
     div.className = "overlay";
-    div.style = "position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000;";
+    div.style = "position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;";
     div.innerHTML = `
-        <div style="background:#fff; color:#000; padding:20px; border-radius:4px; width:320px; font-family:serif; border:1px solid #aaa; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-            <div style="border-bottom:1px solid #a2a9b1; margin-bottom:10px; padding-bottom:5px; font-size:12px; color:#555;">
-                EXTRAIT DES ARCHIVES DE L'AN ${year}
+        <div style="background:#fff; padding:25px; border-radius:4px; width:100%; max-width:380px; text-align:center; border:1px solid #333; box-shadow: 10px 10px 0px #000; font-family: 'Times New Roman', serif;">
+            <div style="text-align:left; border-bottom: 2px solid #000; margin-bottom:15px; padding-bottom:5px; font-weight:bold; letter-spacing:1px;">
+                ARCHIVE No ${Math.floor(Math.random()*9000)} / ${year}
             </div>
-            <h2 style="margin:0 0 15px 0; font-size:20px;">${title}</h2>
-            <div style="text-align:center; background:#f8f9fa; border:1px solid #c8ccd1; padding:10px; margin-bottom:15px;">
-                <img src="${img}" style="max-width:100%; border:1px solid #777;">
+            <h2 style="font-size:20px; margin:0 0 20px 0; line-height:1.2;">${title}</h2>
+            <div style="background:#eee; padding:15px; margin-bottom:20px; border:1px solid #ddd;">
+                <img src="${img}" style="max-width:100%; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);" onerror="this.src='https://via.placeholder.com/150x200?text=Page+Hors-Texte'">
+                <p style="font-size:12px; margin-top:10px; color:#666;">Vue numérisée : Page ${page}</p>
             </div>
-            <p style="font-size:14px; line-height:1.4;">Ce document original fait partie de la collection nationale conservée à la Bibliothèque Nationale de France.</p>
-            <div style="margin-top:20px; display:flex; gap:10px;">
-                <a href="${link}" target="_blank" style="flex:1; background:#36c; color:#fff; text-decoration:none; padding:10px; text-align:center; font-weight:bold; border-radius:2px;">CONSULTER</a>
-                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex:1; cursor:pointer; border:1px solid #a2a9b1;">FERMER</button>
+            <div style="display:flex; gap:10px;">
+                <a href="${link}" target="_blank" style="flex:1; background:#000; color:#fff; text-decoration:none; padding:12px; font-weight:bold; font-size:14px; text-transform:uppercase;">Lire la page</a>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex:1; background:#fff; border:2px solid #000; cursor:pointer; font-weight:bold; text-transform:uppercase;">Garder</button>
             </div>
         </div>
     `;
