@@ -1,8 +1,6 @@
-console.log("GallicaGacha V3 - Proxy Vercel actif");
+console.log("GallicaGacha V3.1 - ARKs vérifiés");
 
 const STORAGE_KEY = "gallica_collection_v1";
-
-// Proxy Vercel local — fonctionne automatiquement sur vercel.app
 const PROXY_URL = "/api/gallica";
 
 // ---- THÈMES DE RECHERCHE ----
@@ -16,16 +14,15 @@ const THEMES = [
   { query: 'dc.type adj "fascicule" and dc.date.issued any "1930 1931 1932"',  label: "Années 30"       },
 ];
 
-// ---- LISTE DE SECOURS si le proxy est inaccessible ----
+// ---- LISTE DE SECOURS — ARKs vérifiés sur Gallica ----
 const FALLBACK_ARKS = [
-  { ark: "btv1b84229574",  title: "Album photographique (BnF)",   type: "photo",   pages: 50 },
-  { ark: "bpt6k1510599t",  title: "Le Figaro, 1900",              type: "journal", pages: 6  },
-  { ark: "bpt6k2787065",   title: "Le Petit Journal, 1895",       type: "journal", pages: 4  },
-  { ark: "bpt6k57643051",  title: "L'Illustration, 1914",         type: "journal", pages: 20 },
-  { ark: "bpt6k6564760j",  title: "La Mode Illustrée, 1870",      type: "journal", pages: 8  },
-  { ark: "btv1b10507065b", title: "Vue de Paris, 1870",           type: "photo",   pages: 1  },
-  { ark: "bpt6k9676459g",  title: "Le Monde Illustré, 1889",      type: "journal", pages: 16 },
-  { ark: "bpt6k1024977",   title: "Gazette des Beaux-Arts, 1900", type: "revue",   pages: 30 },
+  { ark: "bpt6k285345w",  title: "Le Figaro, déc. 1900",         type: "journal", pages: 4 },
+  { ark: "bpt6k285269s",  title: "Le Figaro, sept. 1900",        type: "journal", pages: 4 },
+  { ark: "bpt6k272546t",  title: "Figaro Supplément, 1890",      type: "journal", pages: 4 },
+  { ark: "bpt6k2732198",  title: "Figaro Supplément, 1913",      type: "journal", pages: 4 },
+  { ark: "bpt6k2736663",  title: "Figaro Supplément, 1927",      type: "journal", pages: 4 },
+  { ark: "btv1b84229574", title: "Album photographique (BnF)",   type: "photo",   pages: 50 },
+  { ark: "btv1b10507065b",title: "Vue de Paris, 1870",           type: "photo",   pages: 3  },
 ];
 
 // ---- RARETÉS ----
@@ -40,14 +37,11 @@ const RARITIES = [
 function pickRarity() {
   const total = RARITIES.reduce((s, r) => s + r.weight, 0);
   let rand = Math.random() * total;
-  for (const r of RARITIES) {
-    rand -= r.weight;
-    if (rand <= 0) return r;
-  }
+  for (const r of RARITIES) { rand -= r.weight; if (rand <= 0) return r; }
   return RARITIES[0];
 }
 
-// ---- FONCTION PRINCIPALE (appelée par onclick dans index.html) ----
+// ---- FONCTION PRINCIPALE ----
 async function openPack() {
   const pack = document.getElementById('mainPack');
   const status = document.getElementById('packStatus');
@@ -65,9 +59,7 @@ async function openPack() {
     if (status) status.innerText = "BNF SATURÉE, RÉESSAIE...";
   } finally {
     pack.classList.remove('opening');
-    setTimeout(() => {
-      if (status) status.innerText = "CLIQUER POUR CHERCHER";
-    }, 3000);
+    setTimeout(() => { if (status) status.innerText = "CLIQUER POUR CHERCHER"; }, 3000);
   }
 }
 
@@ -102,7 +94,7 @@ function buildFallbackCard() {
     page,
     imgUrl:   `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.thumbnail`,
     itemUrl:  `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.item`,
-    coverUrl: `https://gallica.bnf.fr/ark:/12148/${item.ark}.thumbnail`,
+    coverUrl: `https://gallica.bnf.fr/ark:/12148/${item.ark}/f1.thumbnail`,
   };
 }
 
@@ -115,22 +107,14 @@ function fetchWithTimeout(url, ms) {
 
 // ---- LABELS TYPES ----
 const TYPE_LABELS = {
-  photo:     "📷 Photographie",
-  journal:   "📰 Journal",
-  fascicule: "📰 Périodique",
-  carte:     "🗺️ Carte",
-  affiche:   "🖼️ Affiche",
-  dessin:    "✏️ Dessin",
-  revue:     "📖 Revue",
-  image:     "🖼️ Image",
-  document:  "📄 Document",
+  photo: "📷 Photographie", journal: "📰 Journal", fascicule: "📰 Périodique",
+  carte: "🗺️ Carte", affiche: "🖼️ Affiche", dessin: "✏️ Dessin",
+  revue: "📖 Revue", image: "🖼️ Image", document: "📄 Document",
 };
 
 // ---- MODALE ----
 function showModal(card) {
-  // Supprimer ancienne modale
   document.querySelector('.gallica-overlay')?.remove();
-
   const rarity = pickRarity();
   const typeLabel = TYPE_LABELS[card.docType] || "📄 Document";
   const yearLabel = card.year || "XIXe s.";
@@ -140,8 +124,7 @@ function showModal(card) {
   div.style.cssText = `
     position:fixed;inset:0;background:rgba(0,0,0,0.88);
     display:flex;align-items:center;justify-content:center;
-    z-index:9999;font-family:'Georgia',serif;
-    animation:gfadeIn .3s ease;
+    z-index:9999;font-family:'Georgia',serif;animation:gfadeIn .3s ease;
   `;
 
   div.innerHTML = `
@@ -174,10 +157,8 @@ function showModal(card) {
         BIBLIOTHÈQUE NATIONALE DE FRANCE
       </div>
       <div class="gc-img">
-        <img
-          src="${card.imgUrl}"
-          alt="${card.title}"
-          onerror="this.src='${card.coverUrl}';this.onerror=null;">
+        <img src="${card.imgUrl}" alt="${card.title}"
+             onerror="this.src='${card.coverUrl}';this.onerror=null;">
       </div>
       <div class="gc-body">
         <p class="gc-title">${card.title}</p>
@@ -199,37 +180,65 @@ function showModal(card) {
   });
 }
 
-// ---- FLASH CONFIRMATION ----
+// ---- FLASH ----
 function showFlash() {
   const f = document.createElement('div');
-  f.style.cssText = `
-    position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  f.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
     background:#d4af37;color:#1a1a2e;padding:11px 22px;border-radius:4px;
-    font-family:Georgia;font-size:13px;z-index:9999;
-    box-shadow:0 4px 14px rgba(0,0,0,.3);`;
+    font-family:Georgia;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.3);`;
   f.textContent = "✦ Ajouté à votre collection !";
   document.body.appendChild(f);
   setTimeout(() => f.remove(), 2400);
 }
 
-// ---- SAUVEGARDE (compatible avec l'ancien format) ----
+// ---- SAUVEGARDE ----
 function saveHero(card) {
   try {
     const coll = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     const isDupe = coll.some(c => c.arkId === card.arkId && c.page === card.page);
     if (!isDupe) {
       coll.unshift({
-        // Champs anciens (compatibilité collection.html)
         name: card.title,
         img:  card.imgUrl,
         url:  card.itemUrl,
-        // Champs nouveaux
         ...card,
         collectedAt: new Date().toISOString(),
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(coll.slice(0, 500)));
     }
-  } catch (e) {
-    console.warn("LocalStorage indisponible :", e);
-  }
+  } catch (e) { console.warn("LocalStorage indisponible :", e); }
 }
+
+// ---- AFFICHAGE COLLECTION ----
+function showCollection() {
+  const container = document.getElementById('collectionGrid');
+  if (!container) return;
+  const coll = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  if (coll.length === 0) {
+    container.innerHTML = `<p style="text-align:center;color:#888;font-family:Georgia;padding:20px">
+      Votre collection est vide. Ouvrez un premier pack !</p>`;
+    return;
+  }
+  container.innerHTML = coll.map(card => `
+    <div onclick="window.open('${card.url || card.itemUrl}','_blank')"
+         title="${card.name || card.title}"
+         style="width:120px;background:#faf6ee;border:1px solid #ccc;border-radius:4px;
+                overflow:hidden;text-align:center;cursor:pointer;font-family:Georgia;">
+      <img src="${card.img || card.imgUrl}"
+           onerror="this.onerror=null;"
+           style="width:100%;height:155px;object-fit:cover;display:block;background:#eee;">
+      <div style="padding:5px 6px;font-size:10px;color:#333;white-space:nowrap;
+                  overflow:hidden;text-overflow:ellipsis;">${card.name || card.title}</div>
+      <div style="padding:0 6px 6px;font-size:9px;color:#888;">${card.year || "XIXe"}</div>
+    </div>
+  `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const pack = document.getElementById('mainPack');
+  if (pack) pack.addEventListener('click', openPack);
+  showCollection();
+});
+
+window.openPack = openPack;
+window.showCollection = showCollection;
