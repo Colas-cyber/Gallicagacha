@@ -54,9 +54,12 @@ module.exports = async function handler(req, res) {
 };
 
 function parseGallicaXML(xml) {
-  const arkMatch = xml.match(/ark:\/12148\/([a-zA-Z0-9]+)/);
-  if (!arkMatch) return null;
-  const arkId = arkMatch[1];
+  // On cherche tous les ARKs et on prend le premier qui est un vrai document numérisé
+  // Les ARKs "cb..." sont des notices catalogue BnF, pas des documents Gallica
+  const arkMatches = [...xml.matchAll(/ark:\/12148\/([a-zA-Z0-9]+)/g)];
+  const validArk = arkMatches.find(m => !m[1].startsWith('cb'));
+  if (!validArk) return null;
+  const arkId = validArk[1];
 
   const titleMatch = xml.match(/<dc:title[^>]*>([\s\S]*?)<\/dc:title>/);
   const title = titleMatch
