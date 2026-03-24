@@ -554,7 +554,7 @@
       const imgFb     = card.coverUrl || img;
       const url       = card.url || card.itemUrl || '#';
       const title     = card.title || card.name || 'Document';
-      const year      = card.year || 'Date inconnue';
+      const year      = card.dateLabel || card.year || 'Date inconnue';
       const typeStr   = TYPE_LABELS[card.docType] || "📄 Document";
       const isShiny   = rarityObj.label !== "COMMUN";
 
