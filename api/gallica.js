@@ -75,12 +75,14 @@ async function proxyImage(req, res) {
       if (!thumb.ok) return res.status(404).send("Image non trouvée");
       const buf = await thumb.arrayBuffer();
       res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cache-Control", "public, max-age=3600");
       return res.send(Buffer.from(buf));
     }
 
     const buf = await response.arrayBuffer();
     res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Cache-Control", "public, max-age=3600");
     return res.send(Buffer.from(buf));
 
