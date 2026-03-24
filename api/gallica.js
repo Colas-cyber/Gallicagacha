@@ -103,8 +103,24 @@ function parseGallicaXML(xml) {
     ? titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim().substring(0, 100)
     : "Document Gallica";
 
-  const dateMatch = xml.match(/<dc:date[^>]*>(\d{4})/);
-  const year = dateMatch ? dateMatch[1] : null;
+  const dateMatch = xml.match(/<dc:date[^>]*>([\d\/\-]+)/);
+  let year = null;
+  let dateLabel = null;
+  if (dateMatch) {
+    const raw = dateMatch[1].trim();
+    const fullDate = raw.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/);
+    if (fullDate) {
+      year = fullDate[1];
+      const months = ["janv.","févr.","mars","avr.","mai","juin",
+                      "juil.","août","sept.","oct.","nov.","déc."];
+      const m = parseInt(fullDate[2]) - 1;
+      const d = parseInt(fullDate[3]);
+      dateLabel = `${d} ${months[m]} ${year}`;
+    } else {
+      year = raw.substring(0, 4);
+      dateLabel = year;
+    }
+  }
 
   const typeMatch = xml.match(/<dc:type[^>]*>([\s\S]*?)<\/dc:type>/);
   const docType = typeMatch
@@ -122,6 +138,7 @@ function parseGallicaXML(xml) {
     arkId,
     title,
     year,
+    dateLabel,
     docType,
     totalPages,
     page,
