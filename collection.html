@@ -510,7 +510,7 @@
         return;
       }
 
-      list.innerHTML = page.map(card => {
+      list.innerHTML = page.map((card, i) => {
         const img      = card.img || card.imgUrl || '';
         const url      = card.url || card.itemUrl || '#';
         const title    = card.title || card.name || 'Document';
@@ -519,9 +519,10 @@
         const rarity   = rarityFromLabel(card.rarity);
         const arkShort = card.arkId ? `#${card.arkId.substring(0,10)}` : '';
         const theme    = card.theme || '';
+        const idx      = (currentPage - 1) * PAGE_SIZE + i;
 
         return `
-          <div class="table-row" onclick="window.open('${url}','_blank')" title="Voir sur Gallica">
+          <div class="table-row" onclick="showCardModal(${idx})" title="Voir la carte">
             <div class="badge-rarity" style="color:${rarity.color}">${rarity.short}</div>
             <div class="thumb-wrap">
               <img src="${img}" onerror="this.onerror=null;this.style.opacity='.3';" alt="${title}">
@@ -541,6 +542,119 @@
           </div>`;
       }).join('');
     }
+
+    // ---- MODALE CARTE depuis la collection ----
+    function showCardModal(idx) {
+      const coll = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      const card = coll[idx];
+      if (!card) return;
+
+      const rarityObj = rarityFromLabel(card.rarity);
+      const img       = card.img || card.imgUrl || '';
+      const imgFb     = card.coverUrl || img;
+      const url       = card.url || card.itemUrl || '#';
+      const title     = card.title || card.name || 'Document';
+      const year      = card.year || 'Date inconnue';
+      const typeStr   = TYPE_LABELS[card.docType] || "📄 Document";
+      const isShiny   = rarityObj.label !== "COMMUN";
+
+      document.querySelector('.col-overlay')?.remove();
+
+      const div = document.createElement('div');
+      div.className = 'col-overlay';
+      div.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.88);
+        display:flex;align-items:center;justify-content:center;
+        z-index:9999;font-family:'Georgia',serif;animation:cfadeIn .3s ease;`;
+
+      div.innerHTML = `
+        <style>
+          @keyframes cfadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+          @keyframes cShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+          @keyframes cGlow{0%,100%{box-shadow:0 0 30px ${rarityObj.color}66}50%{box-shadow:0 0 60px ${rarityObj.color}aa}}
+          @keyframes cShine{0%{background-position:-200% center}100%{background-position:200% center}}
+          @keyframes cBlink{0%,100%{opacity:.4}50%{opacity:1}}
+          .cg {
+            background:#faf6ee;width:min(420px,92vw);border-radius:8px;overflow:hidden;
+            border:3px solid ${rarityObj.color};
+            ${isShiny ? 'animation:cGlow 2s ease-in-out infinite;' : `box-shadow:0 0 30px ${rarityObj.color}44;`}
+          }
+          .cg-head {
+            background:#1a1a2e;padding:14px 16px 12px;
+            border-bottom:2px solid ${rarityObj.color};text-align:center;
+          }
+          .cg-rlabel {
+            font-size:22px;font-weight:bold;letter-spacing:4px;color:${rarityObj.color};
+            ${isShiny ? `background:linear-gradient(90deg,${rarityObj.color} 0%,#fff 40%,${rarityObj.color} 60%,${rarityObj.color} 100%);
+              background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+              background-clip:text;animation:cShine 2.5s linear infinite;` : ''}
+          }
+          .cg-rsub{font-size:11px;color:${rarityObj.color}99;letter-spacing:3px;margin-top:3px;}
+          .cg-imgwrap{
+            width:min(340px,80vw);height:min(420px,52vh);margin:0 auto;
+            position:relative;border:2px solid ${rarityObj.color};
+            ${isShiny ? `box-shadow:0 0 20px ${rarityObj.color}66;` : ''}
+            background:#0a0a18;overflow:hidden;
+          }
+          .cg-ph{
+            position:absolute;inset:0;
+            background:linear-gradient(90deg,#0f0f1e 20%,#1e1e3e 50%,#0f0f1e 80%);
+            background-size:600px 100%;animation:cShimmer 1.6s ease-in-out infinite;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+          }
+          .cg-ph-icon{font-size:40px;opacity:.25;}
+          .cg-ph-txt{font-size:10px;letter-spacing:3px;color:${rarityObj.color}88;}
+          .cg-ph-dots{font-size:18px;color:${rarityObj.color}66;animation:cBlink 1.2s ease-in-out infinite;letter-spacing:4px;}
+          .cg-imgwrap img{
+            position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+            display:block;cursor:pointer;opacity:0;transition:opacity .5s ease;
+          }
+          .cg-imgwrap img.loaded{opacity:1;}
+          .cg-imgwrap img.loaded~.cg-ph{display:none;}
+          .cg-imgwrap img:hover{opacity:.85!important;}
+          .cg-hint{color:#d4af37;font-size:10px;margin-top:8px;letter-spacing:1px;opacity:.6;}
+          .cg-body{padding:14px 16px 4px;text-align:center;}
+          .cg-title{font-size:15px;font-weight:bold;color:#1a1a2e;margin:0 0 6px;line-height:1.4;}
+          .cg-meta{font-size:11px;color:#666;margin:3px 0;}
+          .cg-footer{margin:12px 0 0;background:#1a1a2e;padding:16px;text-align:center;cursor:pointer;}
+          .cg-footer p{color:#d4af37;font-size:13px;font-weight:bold;letter-spacing:2px;margin:0;}
+          .cg-footer span{display:block;color:#888;font-size:10px;letter-spacing:1px;margin-top:4px;}
+        </style>
+        <div class="cg">
+          <div class="cg-head">
+            <div class="cg-rlabel">${rarityObj.label}</div>
+            <div class="cg-rsub">${rarityObj.short} · BIBLIOTHÈQUE NATIONALE DE FRANCE</div>
+          </div>
+          <div style="background:#1a1a2e;padding:16px;text-align:center;">
+            <div class="cg-imgwrap">
+              <img src="${img}" alt="${title}"
+                   onerror="this.src='${imgFb}';this.onerror=null;this.classList.add('loaded');"
+                   onload="this.classList.add('loaded');"
+                   onclick="window.open('${url}','_blank')"
+                   title="Voir sur Gallica">
+              <div class="cg-ph">
+                <div class="cg-ph-icon">📜</div>
+                <div class="cg-ph-txt">Consultation des archives</div>
+                <div class="cg-ph-dots">· · ·</div>
+              </div>
+            </div>
+            <p class="cg-hint">↑ cliquer pour voir sur Gallica</p>
+          </div>
+          <div class="cg-body">
+            <p class="cg-title">${title}</p>
+            <p class="cg-meta">${typeStr} · ${year}</p>
+            <p class="cg-meta" style="font-size:9px;color:#bbb;">ark:/12148/${card.arkId}</p>
+          </div>
+          <div class="cg-footer" id="cg-close">
+            <p>FERMER</p>
+            <span>cliquer pour fermer</span>
+          </div>
+        </div>`;
+
+      document.body.appendChild(div);
+      div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+      document.getElementById('cg-close').addEventListener('click', () => div.remove());
+    }
+    window.showCardModal = showCardModal;
 
     // ---- EVENTS ----
     document.querySelectorAll('.sort-btn').forEach(btn => {
