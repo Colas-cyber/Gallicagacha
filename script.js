@@ -151,7 +151,7 @@ function buildFallbackCard() {
     arkId: item.ark, title: item.title, year: null, docType: item.type, page,
     imgUrl:      buildImgUrl(item.ark, page),
     imgFallback: buildImgFallback(item.ark, page),
-    itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}.item`,
+    itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}`,
     theme:       "Archives",
   };
 }
