@@ -179,7 +179,7 @@ const TYPE_LABELS = {
 function showModal(card, rarity) {
   document.querySelector('.gallica-overlay')?.remove();
   const typeLabel = TYPE_LABELS[card.docType] || "📄 Document";
-  const yearLabel = card.year || "Date inconnue";
+  const yearLabel = card.dateLabel || card.year || "Date inconnue";
 
   const div = document.createElement('div');
   div.className = 'gallica-overlay';
