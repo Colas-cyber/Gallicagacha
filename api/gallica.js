@@ -115,7 +115,6 @@ function parseGallicaXML(xml) {
   const totalPages = pagesMatch ? parseInt(pagesMatch[1]) : 10;
   const page = Math.max(1, Math.floor(Math.random() * Math.min(totalPages, 30)) + 1);
 
-  // imgUrl absolue — fonctionne depuis GitHub Pages ou n'importe où
   const BASE = "https://gallicagacha.vercel.app/api/gallica";
   const arkPath = `ark:/12148/${arkId}/f${page}`;
 
@@ -127,7 +126,7 @@ function parseGallicaXML(xml) {
     totalPages,
     page,
     imgUrl:   `${BASE}?img=${encodeURIComponent(arkPath)}`,
-    itemUrl:  `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}`,
+    itemUrl:  `https://gallica.bnf.fr/ark:/12148/${arkId}/f1`,
     coverUrl: `${BASE}?img=${encodeURIComponent(`ark:/12148/${arkId}/f1`)}`,
   };
 }
