@@ -54,11 +54,11 @@ const THEMES = [
 
 // ---- FALLBACK ----
 const FALLBACK_ARKS = [
-  { ark: "bpt6k285345w",  title: "Le Figaro, 1900",            type: "journal", pages: 4  },
-  { ark: "bpt6k285269s",  title: "Le Figaro, sept. 1900",      type: "journal", pages: 4  },
-  { ark: "btv1b84229574", title: "Album photographique (BnF)", type: "photo",   pages: 50 },
-  { ark: "btv1b10507065b",title: "Vue de Paris, 1870",         type: "photo",   pages: 3  },
-  { ark: "bpt6k272546t",  title: "Figaro Supplément, 1890",    type: "journal", pages: 4  },
+  { ark: "bpt6k285345w",  title: "Le Figaro, 1900",            type: "journal", pages: 4,  year: "1900" },
+  { ark: "bpt6k285269s",  title: "Le Figaro, sept. 1900",      type: "journal", pages: 4,  year: "1900" },
+  { ark: "btv1b84229574", title: "Album photographique (BnF)", type: "photo",   pages: 50, year: "1900" },
+  { ark: "btv1b10507065b",title: "Vue de Paris, 1870",         type: "photo",   pages: 3,  year: "1870" },
+  { ark: "bpt6k272546t",  title: "Figaro Supplément, 1890",    type: "journal", pages: 4,  year: "1890" },
 ];
 
 // ---- RARETÉS ----
@@ -148,7 +148,7 @@ function buildFallbackCard() {
   const item = FALLBACK_ARKS[Math.floor(Math.random() * FALLBACK_ARKS.length)];
   const page = Math.floor(Math.random() * item.pages) + 1;
   return {
-    arkId: item.ark, title: item.title, year: null, docType: item.type, page,
+    arkId: item.ark, title: item.title, year: item.year, docType: item.type, page,
     imgUrl:      buildImgUrl(item.ark, page),
     imgFallback: buildImgFallback(item.ark, page),
     itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}`,
