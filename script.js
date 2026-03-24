@@ -183,45 +183,85 @@ function showModal(card, rarity) {
     z-index:9999;font-family:'Georgia',serif;animation:gfadeIn .3s ease;
   `;
 
+  // Effet brillance uniquement pour les raretés > COMMUN
+  const isShiny = rarity.label !== "COMMUN";
+  const shineAnim = isShiny ? `
+    @keyframes shine {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }` : '';
+  const shineBorder = isShiny ? `
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 30px ${rarity.color}66, 0 0 60px ${rarity.color}33; }
+      50%       { box-shadow: 0 0 60px ${rarity.color}aa, 0 0 100px ${rarity.color}55; }
+    }` : '';
+
   div.innerHTML = `
     <style>
-      @keyframes gfadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+      @keyframes gfadeIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+      ${shineAnim}
+      ${shineBorder}
+
       .gc {
         background: #faf6ee;
         width: min(420px, 92vw);
         border-radius: 8px;
         overflow: hidden;
         border: 3px solid ${rarity.color};
-        box-shadow: 0 0 50px ${rarity.color}88;
+        ${isShiny
+          ? `animation: glowPulse 2s ease-in-out infinite;`
+          : `box-shadow: 0 0 30px ${rarity.color}44;`}
       }
+
+      /* En-tête : juste la rareté en grand */
       .gc-head {
-        background: #1a1a2e; color: #d4af37;
-        padding: 10px 16px; font-size: 11px;
-        letter-spacing: 2px;
+        background: #1a1a2e;
+        padding: 14px 16px 12px;
         border-bottom: 2px solid ${rarity.color};
         text-align: center;
       }
-      .gc-badge {
-        display: inline-block; padding: 3px 14px;
-        background: ${rarity.color}; color: #fff;
-        font-size: 10px; letter-spacing: 2px;
-        border-radius: 3px; margin-bottom: 4px;
+      .gc-rarity-label {
+        font-size: 22px;
+        font-weight: bold;
+        letter-spacing: 4px;
+        color: ${rarity.color};
+        ${isShiny ? `
+          background: linear-gradient(90deg,
+            ${rarity.color} 0%,
+            #fff 40%,
+            ${rarity.color} 60%,
+            ${rarity.color} 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shine 2.5s linear infinite;
+        ` : ''}
       }
-      .gc-theme { font-size: 10px; color: #d4af3799; letter-spacing: 1px; margin-top: 2px; }
+      .gc-rarity-short {
+        font-size: 11px;
+        color: ${rarity.color}99;
+        letter-spacing: 3px;
+        margin-top: 3px;
+      }
+
       .gc-img { background: #1a1a2e; padding: 16px; text-align: center; }
       .gc-img img {
         width: min(340px, 80vw);
         height: min(420px, 52vh);
         object-fit: cover;
-        border: 2px solid #d4af37;
+        border: 2px solid ${rarity.color};
         display: block; margin: 0 auto;
         cursor: pointer; transition: opacity .2s;
+        ${isShiny ? `box-shadow: 0 0 20px ${rarity.color}66;` : ''}
       }
       .gc-img img:hover { opacity: .85; }
-      .gc-hint { color: #d4af37; font-size: 10px; margin-top: 8px; letter-spacing: 1px; opacity: .7; }
+      .gc-hint { color: #d4af37; font-size: 10px; margin-top: 8px; letter-spacing: 1px; opacity: .6; }
+
       .gc-body { padding: 14px 16px 4px; text-align: center; }
       .gc-title { font-size: 15px; font-weight: bold; color: #1a1a2e; margin: 0 0 6px; line-height: 1.4; }
       .gc-meta { font-size: 11px; color: #666; margin: 3px 0; }
+
       .gc-footer {
         margin: 12px 0 0; background: #1a1a2e;
         padding: 16px; text-align: center; cursor: pointer;
@@ -231,8 +271,8 @@ function showModal(card, rarity) {
     </style>
     <div class="gc">
       <div class="gc-head">
-        <div class="gc-badge">${rarity.label} — ${rarity.short}</div>
-        <div class="gc-theme">${card.theme || "BIBLIOTHÈQUE NATIONALE DE FRANCE"}</div>
+        <div class="gc-rarity-label">${rarity.label}</div>
+        <div class="gc-rarity-short">${rarity.short} · BIBLIOTHÈQUE NATIONALE DE FRANCE</div>
       </div>
       <div class="gc-img">
         <img
