@@ -54,7 +54,7 @@ module.exports = async function handler(req, res) {
 async function proxyImage(req, res) {
   // req.query.img = "ark:/12148/btv1b.../f5"
   const arkPath = req.query.img;
-  const iiifUrl = `https://gallica.bnf.fr/iiif/${arkPath}/full/600,/0/native.jpg`;
+  const iiifUrl = `https://gallica.bnf.fr/iiif/${arkPath}/full/1200,/0/native.jpg`;
 
   try {
     const response = await fetch(iiifUrl, {
