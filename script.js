@@ -6,27 +6,27 @@ const PROXY_URL = "https://gallicagacha.vercel.app/api/gallica";
 // ---- THÈMES ----
 const THEMES = [
   // Moyen Âge
-  { query: 'dc.type adj "manuscrit" and dc.date adj "1200"',   label: "Manuscrit médiéval" },
-  { query: 'dc.type adj "manuscrit" and dc.date adj "1350"',   label: "Manuscrit XIVe"     },
-  { query: 'dc.type adj "manuscrit" and dc.date adj "1450"',   label: "Manuscrit XVe"      },
-  { query: 'dc.type adj "image" and dc.date adj "1400"',       label: "Image médiévale"    },
-  { query: 'dc.type adj "carte" and dc.date adj "1480"',       label: "Carte médiévale"    },
+  { query: 'dc.type adj "image" and dc.date adj "1200"',       label: "Enluminure médiévale" },
+  { query: 'dc.type adj "image" and dc.date adj "1350"',       label: "Image XIVe"           },
+  { query: 'dc.type adj "image" and dc.date adj "1450"',       label: "Image XVe"            },
+  { query: 'dc.type adj "image" and dc.date adj "1400"',       label: "Image médiévale"      },
+  { query: 'dc.type adj "carte" and dc.date adj "1480"',       label: "Carte médiévale"      },
   // Renaissance
-  { query: 'dc.type adj "image" and dc.date adj "1520"',       label: "Image XVIe"         },
-  { query: 'dc.type adj "carte" and dc.date adj "1550"',       label: "Carte Renaissance"  },
-  { query: 'dc.type adj "manuscrit" and dc.date adj "1560"',   label: "Manuscrit XVIe"     },
-  { query: 'dc.type adj "image" and dc.date adj "1580"',       label: "Estampe XVIe"       },
+  { query: 'dc.type adj "image" and dc.date adj "1520"',       label: "Image XVIe"           },
+  { query: 'dc.type adj "carte" and dc.date adj "1550"',       label: "Carte Renaissance"    },
+  { query: 'dc.type adj "image" and dc.date adj "1560"',       label: "Estampe XVIe"         },
+  { query: 'dc.type adj "image" and dc.date adj "1580"',       label: "Estampe XVIe"         },
   // XVIIe
-  { query: 'dc.type adj "image" and dc.date adj "1620"',       label: "Image XVIIe"        },
-  { query: 'dc.type adj "carte" and dc.date adj "1650"',       label: "Carte XVIIe"        },
-  { query: 'dc.type adj "image" and dc.date adj "1680"',       label: "Estampe XVIIe"      },
-  { query: 'dc.type adj "manuscrit" and dc.date adj "1660"',   label: "Manuscrit XVIIe"    },
+  { query: 'dc.type adj "image" and dc.date adj "1620"',       label: "Image XVIIe"          },
+  { query: 'dc.type adj "carte" and dc.date adj "1650"',       label: "Carte XVIIe"          },
+  { query: 'dc.type adj "image" and dc.date adj "1680"',       label: "Estampe XVIIe"        },
+  { query: 'dc.type adj "image" and dc.date adj "1660"',       label: "Image XVIIe"          },
   // XVIIIe
-  { query: 'dc.type adj "image" and dc.date adj "1720"',       label: "Image XVIIIe"       },
-  { query: 'dc.type adj "carte" and dc.date adj "1750"',       label: "Carte XVIIIe"       },
-  { query: 'dc.type adj "image" and dc.date adj "1780"',       label: "Estampe XVIIIe"     },
-  { query: 'dc.type adj "fascicule" and dc.date adj "1790"',   label: "Presse Révolution"  },
-  { query: 'dc.type adj "image" and dc.date adj "1760"',       label: "Lumières"           },
+  { query: 'dc.type adj "image" and dc.date adj "1720"',       label: "Image XVIIIe"         },
+  { query: 'dc.type adj "carte" and dc.date adj "1750"',       label: "Carte XVIIIe"         },
+  { query: 'dc.type adj "image" and dc.date adj "1780"',       label: "Estampe XVIIIe"       },
+  { query: 'dc.type adj "fascicule" and dc.date adj "1790"',   label: "Presse Révolution"    },
+  { query: 'dc.type adj "image" and dc.date adj "1760"',       label: "Lumières"             },
   // XIXe
   { query: 'dc.type adj "image" and dc.date adj "1820"',       label: "Image 1820"         },
   { query: 'dc.type adj "image" and dc.date adj "1848"',       label: "Révolution 1848"    },
@@ -87,12 +87,16 @@ function pickRarity(docType) {
   return RARITIES[0];
 }
 
-// ---- URLS IMAGE ----
+// ---- URLS IMAGE — passent par le proxy Vercel (pas de blocage CORS) ----
+const IMG_PROXY = "https://gallicagacha.vercel.app/api/gallica";
+
 function buildImgUrl(arkId, page) {
-  return `https://gallica.bnf.fr/iiif/ark:/12148/${arkId}/f${page}/full/600,/0/native.jpg`;
+  const arkPath = `ark:/12148/${arkId}/f${page}`;
+  return `${IMG_PROXY}?img=${encodeURIComponent(arkPath)}`;
 }
 function buildImgFallback(arkId, page) {
-  return `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}.thumbnail`;
+  const arkPath = `ark:/12148/${arkId}/f1`;
+  return `${IMG_PROXY}?img=${encodeURIComponent(arkPath)}`;
 }
 
 // ---- FONCTION PRINCIPALE ----
