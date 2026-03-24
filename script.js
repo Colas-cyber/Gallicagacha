@@ -58,11 +58,11 @@ const THEMES = [
 
 // ---- FALLBACK ----
 const FALLBACK_ARKS = [
-  { ark: "bpt6k285345w",  title: "Le Figaro, 1900",            type: "journal", pages: 4,  year: "1900" },
-  { ark: "bpt6k285269s",  title: "Le Figaro, sept. 1900",      type: "journal", pages: 4,  year: "1900" },
-  { ark: "btv1b84229574", title: "Album photographique (BnF)", type: "photo",   pages: 50, year: "1900" },
-  { ark: "btv1b10507065b",title: "Vue de Paris, 1870",         type: "photo",   pages: 3,  year: "1870" },
-  { ark: "bpt6k272546t",  title: "Figaro Supplément, 1890",    type: "journal", pages: 4,  year: "1890" },
+  { ark: "bpt6k285345w",  title: "Le Figaro",                  type: "fascicule", pages: 4,  year: "1900", dateLabel: "4 déc. 1900"   },
+  { ark: "bpt6k285269s",  title: "Le Figaro",                  type: "fascicule", pages: 4,  year: "1900", dateLabel: "20 sept. 1900" },
+  { ark: "btv1b84229574", title: "Album photographique (BnF)", type: "image",     pages: 50, year: "1900", dateLabel: "1900"          },
+  { ark: "btv1b10507065b",title: "Vue de Paris",               type: "image",     pages: 3,  year: "1870", dateLabel: "1870"          },
+  { ark: "bpt6k272546t",  title: "Le Figaro Supplément",       type: "fascicule", pages: 4,  year: "1890", dateLabel: "31 mai 1890"   },
 ];
 
 // ---- RARETÉS ----
@@ -154,10 +154,15 @@ function buildFallbackCard() {
   const item = FALLBACK_ARKS[Math.floor(Math.random() * FALLBACK_ARKS.length)];
   const page = Math.floor(Math.random() * item.pages) + 1;
   return {
-    arkId: item.ark, title: item.title, year: item.year, docType: item.type, page,
+    arkId:      item.ark,
+    title:      item.title,
+    year:       item.year,
+    dateLabel:  item.dateLabel,
+    docType:    item.type,
+    page,
     imgUrl:      buildImgUrl(item.ark, page),
     imgFallback: buildImgFallback(item.ark, page),
-    itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f${page}`,
+    itemUrl:     `https://gallica.bnf.fr/ark:/12148/${item.ark}/f1`,
     theme:       "Archives",
   };
 }
