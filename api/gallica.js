@@ -41,6 +41,35 @@ module.exports = async function handler(req, res) {
     const card = parseGallicaXML(xml);
     if (!card) return res.status(404).json({ error: "Aucun document trouvé" });
 
+    // Pour les périodiques, récupérer la date exacte via l'API OAI Document
+    const needsExactDate = !card.dateLabel || (card.dateLabel && card.dateLabel.length === 4);
+    if (needsExactDate) {
+      try {
+        const docUrl = `https://gallica.bnf.fr/services/OAIRecord?ark=${card.arkId}`;
+        const docRes = await fetch(docUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 GallicaGacha/2.0" }
+        });
+        if (docRes.ok) {
+          const docXml = await docRes.text();
+          // Chercher la date précise — format YYYY/MM/DD ou YYYY-MM-DD
+          const preciseDate = docXml.match(/<dc:date>([\d\/\-]+)<\/dc:date>/);
+          if (preciseDate) {
+            const raw = preciseDate[1].trim();
+            const full = raw.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/);
+            if (full) {
+              const months = ["janv.","févr.","mars","avr.","mai","juin",
+                              "juil.","août","sept.","oct.","nov.","déc."];
+              const y = full[1], m = parseInt(full[2])-1, d = parseInt(full[3]);
+              if (parseInt(y) >= 800 && parseInt(y) <= 2000) {
+                card.year = y;
+                card.dateLabel = `${d} ${months[m]} ${y}`;
+              }
+            }
+          }
+        }
+      } catch(e) { /* silencieux */ }
+    }
+
     res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
     return res.status(200).json(card);
 
