@@ -302,7 +302,22 @@
   <div class="stats-block">
     <div class="stats-title">
       <span>Collection Stats</span>
-      <span>Documents uniques : <b id="statUnique">0</b> &nbsp;|&nbsp; Total tirages : <b id="statTotal">0</b></span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>Documents uniques : <b id="statUnique">0</b> &nbsp;|&nbsp; Total tirages : <b id="statTotal">0</b></span>
+        <button onclick="exportCollection()" style="
+          padding:4px 12px;background:transparent;
+          border:1px solid #d4af3766;color:#d4af37;
+          border-radius:3px;font-family:Georgia;font-size:11px;
+          cursor:pointer;letter-spacing:1px;">↓ Exporter</button>
+        <label style="
+          padding:4px 12px;background:transparent;
+          border:1px solid #44446688;color:#888;
+          border-radius:3px;font-family:Georgia;font-size:11px;
+          cursor:pointer;letter-spacing:1px;">↑ Importer
+          <input type="file" id="importFile" accept=".json"
+                 style="display:none" onchange="importCollection(event)">
+        </label>
+      </div>
     </div>
     <div class="rarity-bars" id="rarityBars"></div>
   </div>
@@ -364,13 +379,28 @@
     <button id="btnNext">→</button>
   </div>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
   <script>
-    // STORAGE_KEY, RARITIES et TYPE_LABELS sont déjà définis dans script.js
-
+    const STORAGE_KEY = "gallica_collection_v1";
     const PAGE_SIZE = 20;
+
     let currentPage = 1;
     let currentSort = "recent";
+
+    const RARITIES = [
+      { label: "LÉGENDAIRE", short: "LR", color: "#c8a200" },
+      { label: "ÉPIQUE",     short: "UR", color: "#9932cc" },
+      { label: "RARE",       short: "SR", color: "#2768c4" },
+      { label: "PEU COMMUN", short: "R",  color: "#2a9d4e" },
+      { label: "COMMUN",     short: "C",  color: "#888888" },
+    ];
+
+    const TYPE_LABELS = {
+      photo: "📷 Photo", journal: "📰 Journal", fascicule: "📰 Presse",
+      carte: "🗺️ Carte", affiche: "🖼️ Affiche", dessin: "✏️ Dessin",
+      manuscrit: "📜 Manuscrit", revue: "📖 Revue", image: "🖼️ Image",
+      "image fixe": "🖼️ Image", document: "📄 Document", estampe: "🎨 Estampe",
+    };
 
     function getEpoque(year) {
       if (!year) return "unknown";
@@ -394,33 +424,18 @@
     }
 
     function rarityFromLabel(label) {
-      const RARITIES_LIST = [
-        { label: "LÉGENDAIRE", short: "LR", color: "#c8a200" },
-        { label: "ÉPIQUE",     short: "UR", color: "#9932cc" },
-        { label: "RARE",       short: "SR", color: "#2768c4" },
-        { label: "PEU COMMUN", short: "R",  color: "#2a9d4e" },
-        { label: "COMMUN",     short: "C",  color: "#888888" },
-      ];
-      return RARITIES_LIST.find(r => r.label === label) || RARITIES_LIST[4];
+      return RARITIES.find(r => r.label === label) || RARITIES[4];
     }
 
     function renderStats(coll) {
       document.getElementById('statUnique').textContent = coll.length;
       document.getElementById('statTotal').textContent  = coll.length;
 
-      const RARITIES_LIST = [
-        { label: "LÉGENDAIRE", short: "LR", color: "#c8a200" },
-        { label: "ÉPIQUE",     short: "UR", color: "#9932cc" },
-        { label: "RARE",       short: "SR", color: "#2768c4" },
-        { label: "PEU COMMUN", short: "R",  color: "#2a9d4e" },
-        { label: "COMMUN",     short: "C",  color: "#888888" },
-      ];
-
       const counts = {};
-      RARITIES_LIST.forEach(r => counts[r.label] = 0);
+      RARITIES.forEach(r => counts[r.label] = 0);
       coll.forEach(c => { if (c.rarity) counts[c.rarity] = (counts[c.rarity] || 0) + 1; });
 
-      document.getElementById('rarityBars').innerHTML = RARITIES_LIST.map(r => {
+      document.getElementById('rarityBars').innerHTML = RARITIES.map(r => {
         const n = counts[r.label] || 0;
         const pct = coll.length ? Math.round(n / coll.length * 100) : 0;
         return `
@@ -432,16 +447,10 @@
       }).join('');
     }
 
-    const TYPE_LABELS_COL = {
-      photo: "📷 Photo", journal: "📰 Journal", fascicule: "📰 Presse",
-      carte: "🗺️ Carte", affiche: "🖼️ Affiche", dessin: "✏️ Dessin",
-      manuscrit: "📜 Manuscrit", revue: "📖 Revue", image: "🖼️ Image",
-      "image fixe": "🖼️ Image", document: "📄 Document", estampe: "🎨 Estampe",
-    };
-
     function renderCollection() {
       const coll = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
+      // Remplir thèmes
       const themes = [...new Set(coll.map(c => c.theme).filter(Boolean))].sort();
       const themeSelect = document.getElementById('filterTheme');
       const prevTheme = themeSelect.value;
@@ -450,6 +459,7 @@
 
       renderStats(coll);
 
+      // Filtres
       const search = document.getElementById('searchTitle').value.toLowerCase();
       const epoque = document.getElementById('filterEpoque').value;
       const type   = document.getElementById('filterType').value;
@@ -464,15 +474,17 @@
         return true;
       });
 
+      // Tri
       const rarityOrder = { "LÉGENDAIRE":0,"ÉPIQUE":1,"RARE":2,"PEU COMMUN":3,"COMMUN":4 };
       filtered.sort((a, b) => {
         if (currentSort === "date_asc")  return (parseInt(a.year)||9999) - (parseInt(b.year)||9999);
         if (currentSort === "date_desc") return (parseInt(b.year)||0)    - (parseInt(a.year)||0);
         if (currentSort === "title")     return (a.title||a.name||'').localeCompare(b.title||b.name||'','fr');
         if (currentSort === "rarity")    return (rarityOrder[a.rarity]||4) - (rarityOrder[b.rarity]||4);
-        return 0;
+        return 0; // recent = ordre naturel
       });
 
+      // Pagination
       const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
       if (currentPage > totalPages) currentPage = totalPages;
       const start = (currentPage - 1) * PAGE_SIZE;
@@ -503,7 +515,7 @@
         const url      = card.url || card.itemUrl || '#';
         const title    = card.title || card.name || 'Document';
         const year     = card.year || '—';
-        const typeStr  = TYPE_LABELS_COL[card.docType] || "📄 Document";
+        const typeStr  = TYPE_LABELS[card.docType] || "📄 Document";
         const rarity   = rarityFromLabel(card.rarity);
         const arkShort = card.arkId ? `#${card.arkId.substring(0,10)}` : '';
         const theme    = card.theme || '';
@@ -530,6 +542,7 @@
       }).join('');
     }
 
+    // ---- EVENTS ----
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -561,6 +574,60 @@
 
     document.getElementById('btnPrev').addEventListener('click', () => { currentPage--; renderCollection(); });
     document.getElementById('btnNext').addEventListener('click', () => { currentPage++; renderCollection(); });
+
+    // ---- EXPORT ----
+    function exportCollection() {
+      const coll = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      if (coll.length === 0) { alert("Votre collection est vide !"); return; }
+      const json = JSON.stringify(coll, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `gallicagacha_collection_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    window.exportCollection = exportCollection;
+
+    // ---- IMPORT ----
+    function importCollection(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!Array.isArray(imported)) throw new Error("Format invalide");
+
+          const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+          // Fusionner sans doublons (par arkId + page)
+          const existingKeys = new Set(existing.map(c => `${c.arkId}_${c.page}`));
+          const newCards = imported.filter(c => !existingKeys.has(`${c.arkId}_${c.page}`));
+          const merged = [...newCards, ...existing].slice(0, 500);
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          renderCollection();
+
+          // Confirmation
+          const msg = document.createElement('div');
+          msg.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+            background:#2a9d4e;color:#fff;padding:11px 22px;border-radius:4px;
+            font-family:Georgia;font-size:13px;z-index:9999;`;
+          msg.textContent = `✦ ${newCards.length} nouvelle${newCards.length>1?'s':''} carte${newCards.length>1?'s':''} importée${newCards.length>1?'s':''} !`;
+          document.body.appendChild(msg);
+          setTimeout(() => msg.remove(), 3000);
+
+        } catch(err) {
+          alert("Fichier invalide. Assurez-vous d'importer un fichier .json exporté depuis GallicaGacha.");
+        }
+        // Réinitialiser l'input pour permettre un re-import du même fichier
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+    window.importCollection = importCollection;
 
     renderCollection();
   </script>
