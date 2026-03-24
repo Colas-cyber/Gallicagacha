@@ -113,14 +113,34 @@ function parseGallicaXML(xml) {
     const fullDate = raw.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/);
     if (fullDate) {
       year = fullDate[1];
-      const months = ["janv.","févr.","mars","avr.","mai","juin",
-                      "juil.","août","sept.","oct.","nov.","déc."];
-      const m = parseInt(fullDate[2]) - 1;
-      const d = parseInt(fullDate[3]);
-      dateLabel = `${d} ${months[m]} ${year}`;
+      const y = parseInt(year);
+      if (y >= 800 && y <= 2000) {
+        const months = ["janv.","févr.","mars","avr.","mai","juin",
+                        "juil.","août","sept.","oct.","nov.","déc."];
+        const m = parseInt(fullDate[2]) - 1;
+        const d = parseInt(fullDate[3]);
+        dateLabel = `${d} ${months[m]} ${year}`;
+      } else { year = null; }
     } else {
-      year = raw.substring(0, 4);
-      dateLabel = year;
+      const n = parseInt(raw);
+      if (!isNaN(n) && raw.length <= 2 && n >= 1 && n <= 21) {
+        // Siècle en chiffres arabes → romain
+        const toRoman = n => {
+          const v = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+          const s = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
+          let r = '', x = n;
+          for (let i = 0; i < v.length; i++) { while (x >= v[i]) { r += s[i]; x -= v[i]; } }
+          return r;
+        };
+        year = null;
+        dateLabel = `${toRoman(n)}e siècle`;
+      } else {
+        const y = parseInt(raw.substring(0, 4));
+        if (raw.length >= 4 && y >= 800 && y <= 2000) {
+          year = String(y);
+          dateLabel = year;
+        }
+      }
     }
   }
 
