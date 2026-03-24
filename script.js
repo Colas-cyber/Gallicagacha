@@ -87,16 +87,14 @@ function pickRarity(docType) {
   return RARITIES[0];
 }
 
-// ---- URLS IMAGE — passent par le proxy Vercel (pas de blocage CORS) ----
+// ---- URLS IMAGE — proxy Vercel absolu (fonctionne depuis GitHub Pages) ----
 const IMG_PROXY = "https://gallicagacha.vercel.app/api/gallica";
 
 function buildImgUrl(arkId, page) {
-  const arkPath = `ark:/12148/${arkId}/f${page}`;
-  return `${IMG_PROXY}?img=${encodeURIComponent(arkPath)}`;
+  return `${IMG_PROXY}?img=${encodeURIComponent(`ark:/12148/${arkId}/f${page}`)}`;
 }
 function buildImgFallback(arkId, page) {
-  const arkPath = `ark:/12148/${arkId}/f1`;
-  return `${IMG_PROXY}?img=${encodeURIComponent(arkPath)}`;
+  return `${IMG_PROXY}?img=${encodeURIComponent(`ark:/12148/${arkId}/f1`)}`;
 }
 
 // ---- FONCTION PRINCIPALE ----
