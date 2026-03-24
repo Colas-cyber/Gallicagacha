@@ -345,7 +345,7 @@ function showModal(card, rarity) {
       </div>
       <div class="gc-body">
         <p class="gc-title">${card.title}</p>
-        <p class="gc-meta">${typeLabel} · ${yearLabel} · Page ${card.page}</p>
+        <p class="gc-meta">${typeLabel} · ${yearLabel}</p>
         <p class="gc-meta" style="font-size:9px;color:#bbb;">ark:/12148/${card.arkId}</p>
       </div>
       <div class="gc-footer" id="gc-close">
