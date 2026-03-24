@@ -1,7 +1,11 @@
-console.log("GallicaGacha V3.7 - Rareté sauvegardée");
+console.log("GallicaGacha V3.8");
 
-const STORAGE_KEY = "gallica_collection_v1";
-const PROXY_URL = "https://gallicagacha.vercel.app/api/gallica";
+// Evite les conflits de redéclaration si le script est chargé plusieurs fois
+if (typeof window._gallicaLoaded === 'undefined') {
+  window._gallicaLoaded = true;
+
+var STORAGE_KEY = "gallica_collection_v1";
+var PROXY_URL = "https://gallicagacha.vercel.app/api/gallica";
 
 // ---- THÈMES ----
 const THEMES = [
@@ -376,9 +380,8 @@ function saveHero(card) {
   } catch (e) { console.warn("LocalStorage :", e); }
 }
 
-// ---- COLLECTION (pour showCollection appelé depuis collection.html) ----
+// ---- COLLECTION ----
 function showCollection() {
-  // collection.html gère son propre rendu — cette fonction est gardée pour compatibilité
   if (typeof renderCollection === 'function') renderCollection();
 }
 
@@ -387,5 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (pack) pack.addEventListener('click', openPack);
 });
 
-window.openPack    = openPack;
+window.openPack = openPack;
 window.showCollection = showCollection;
+
+} // fin du bloc _gallicaLoaded
