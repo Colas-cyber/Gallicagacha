@@ -83,7 +83,7 @@ function parseGallicaXML(xml) {
     totalPages,
     page,
     imgUrl:   `https://gallica.bnf.fr/iiif/ark:/12148/${arkId}/f${page}/full/600,/0/native.jpg`,
-    itemUrl:  `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}.item`,
+    itemUrl:  `https://gallica.bnf.fr/ark:/12148/${arkId}/f${page}`,
     coverUrl: `https://gallica.bnf.fr/ark:/12148/${arkId}/f1.thumbnail`,
   };
 }
